@@ -1,7 +1,7 @@
 {
-  "name": "formsy-react",
-  "version": "0.14.1",
-  "description": "A form input builder and validator for React JS",
+  "name": "formsy-react-patch",
+  "version": "0.1",
+  "description": "A patch of formsy-react addressing https://github.com/christianalfoni/formsy-react/issues/134",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianalfoni/formsy-react.git"
