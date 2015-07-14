@@ -436,10 +436,12 @@ Formsy.Form = React.createClass({
   },
   render: function () {
 
-    return (
-      <form {...this.props} onSubmit={this.submit}>
-        {this.traverseChildrenAndRegisterInputs(this.props.children)}
-      </form>
+    return React.DOM.form({
+        onSubmit: this.submit,
+        className: this.props.className,
+        autoComplete: this.props.autoComplete
+      },
+      this.traverseChildrenAndRegisterInputs(this.props.children)
     );
 
   }
