@@ -176,7 +176,7 @@ Formsy.Form = React.createClass({
     }.bind(this));
   },
 
-  isValidValue (component, value) {
+  isValidValue: function (component, value) {
     return this.runValidation(component, value).isValid;
   },
 

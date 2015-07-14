@@ -1,10 +1,10 @@
 {
   "name": "formsy-react-patch",
-  "version": "0.1",
+  "version": "1.0.0",
   "description": "A patch of formsy-react addressing https://github.com/christianalfoni/formsy-react/issues/134",
   "repository": {
     "type": "git",
-    "url": "https://github.com/christianalfoni/formsy-react.git"
+    "url": "https://github.com/charosez/formsy-react.git"
   },
   "main": "src/main.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "test": "node testrunner",
     "examples": "webpack-dev-server --config examples/webpack.config.js --content-base examples"
   },
-  "author": "Christian Alfoni",
+  "author": "Charles",
   "license": "MIT",
   "keywords": [
     "react",
