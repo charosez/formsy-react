@@ -176,6 +176,10 @@ Formsy.Form = React.createClass({
     }.bind(this));
   },
 
+  isValidValue (component, value) {
+    return this.runValidation(component, value).isValid;
+  },
+
   // Traverse the children and children of children to find
   // all inputs by checking the name prop. Maybe do a better
   // check here
@@ -197,9 +201,7 @@ Formsy.Form = React.createClass({
           _detachFromForm: this.detachFromForm,
           _validate: this.validate,
           _isFormDisabled: this.isFormDisabled,
-          _isValidValue: function (component, value) {
-            return this.runValidation(component, value).isValid;
-          }.bind(this)
+          _isValidValue: this.isValidValue
         }, child.props && child.props.children);
       } else {
         return React.cloneElement(child, {}, this.traverseChildrenAndRegisterInputs(child.props && child.props.children));
