@@ -47,6 +47,8 @@ Formsy.Form = React.createClass({
   },
 
   componentDidMount: function () {
+    // register input buttons:
+
     this.validateForm();
   },
 
@@ -179,7 +181,19 @@ Formsy.Form = React.createClass({
   isValidValue: function (component, value) {
     return this.runValidation(component, value).isValid;
   },
-
+  handleCustomSubmit: function(child) {
+    return function() {
+      this.setFormPristine(false);
+      this.updateModel();
+      var model = this.mapModel();
+      if (child.props.onSubmit) {
+        child.props.onSubmit(model, this.resetModel, this.updateInputsWithError);
+      }
+      if (child.props.onValidSubmit) {
+        this.state.isValid ? child.props.onValidSubmit(model, this.resetModel, this.updateInputsWithError) : child.props.onInvalidSubmit(model, this.resetModel, this.updateInputsWithError);
+      }
+    }.bind(this);
+  },
   // Traverse the children and children of children to find
   // all inputs by checking the name prop. Maybe do a better
   // check here
@@ -194,8 +208,7 @@ Formsy.Form = React.createClass({
         return child;
       }
 
-      if (child.props && child.props.name) {
-
+      if (child.props && child.props.name)  {
         return React.cloneElement(child, {
           _attachToForm: this.attachToForm,
           _detachFromForm: this.detachFromForm,
@@ -204,7 +217,13 @@ Formsy.Form = React.createClass({
           _isValidValue: this.isValidValue
         }, child.props && child.props.children);
       } else {
-        return React.cloneElement(child, {}, this.traverseChildrenAndRegisterInputs(child.props && child.props.children));
+        if (child.props.formsy === 'submit') {
+          return React.cloneElement(child, {
+            onClick: this.handleCustomSubmit(child)
+          }, child.props && child.props.children);   
+        } else {
+          return React.cloneElement(child, {}, this.traverseChildrenAndRegisterInputs(child.props && child.props.children));
+        }
       }
 
     }, this);
@@ -435,7 +454,6 @@ Formsy.Form = React.createClass({
     delete this.model[component.props.name];
   },
   render: function () {
-
     return React.DOM.form({
         onSubmit: this.submit,
         className: this.props.className,
