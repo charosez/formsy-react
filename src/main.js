@@ -401,10 +401,11 @@ Formsy.Form = React.createClass({
         isValid: allIsValid
       });
 
+      // pass in component inputs for handlers to access 
       if (allIsValid) {
-        this.props.onValid();
+        this.props.onValid(input);
       } else {
-        this.props.onInvalid();
+        this.props.onInvalid(input);
       }
 
       // Tell the form that it can start to trigger change events
