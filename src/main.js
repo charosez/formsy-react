@@ -44,6 +44,7 @@ Formsy.Form = React.createClass({
   componentWillMount: function () {
     this.inputs = {};
     this.model = {};
+    this.inputOrder = [];
   },
 
   componentDidMount: function () {
@@ -83,7 +84,6 @@ Formsy.Form = React.createClass({
   submit: function (event) {
 
     event && event.preventDefault();
-
     // Trigger form as not pristine.
     // If any inputs have not been touched yet this will make them dirty
     // so validation becomes visible (if based on isPristine)
@@ -181,17 +181,85 @@ Formsy.Form = React.createClass({
   isValidValue: function (component, value) {
     return this.runValidation(component, value).isValid;
   },
-  handleCustomSubmit: function(child) {
+
+  isRequiredAndEmpty: function (component) {
+      var value = component.getValue();
+      var isExisty = function(value) {
+        return value !== null && value !== undefined;
+      };
+      if (component.isRequired()) { 
+        if (!isExisty(value) || value.length <= 0) {
+            return true;
+        }
+      }
+  },
+  focusOnFirstInvalidDOMnode: function () {
+      var firstInvalidComponent = null;
+      // Find first invalid component
+      this.inputOrder.forEach(function(name) {
+          var component = this.inputs[name];
+          if (!firstInvalidComponent && component.state._validationError) {
+            firstInvalidComponent = component; 
+          }
+      }.bind(this));
+      if (firstInvalidComponent) {
+          // Focus on first invalid component
+          React.findDOMNode(firstInvalidComponent).childNodes[0].focus();
+      }
+  },
+  isListOfComponentsValid: function (listOfComponentNames) {
+      listOfComponentNames.every(function(name) {
+          var component = this.inputs[name];
+          // Check if component is valid
+          var validation = this.isValidValue(component);
+          // Check if component is required and empty
+          var isRequiredEmpty = this.isRequiredAndEmpty(component);
+          var isRequiredValid = !isRequiredEmpty;
+          // Set empty required field as invalid
+          if (isRequiredEmpty) {    
+              component.setState({
+                  _isRequired: false, 
+                  _value: ' ', 
+                  _isValid: false,
+                  _validationError: "This field is required"
+            });
+          }
+          // If component is required, to be valid, it must be empty
+          return component.isRequired() ? isRequiredValid  : validation;
+      }.bind(this));
+  },
+  handleCustomSubmit: function(child, validationList) {
     return function() {
-      this.setFormPristine(false);
-      this.updateModel();
-      var model = this.mapModel();
-      if (child.props.onSubmit) {
-        child.props.onSubmit(model, this.resetModel, this.updateInputsWithError);
-      }
-      if (child.props.onValidSubmit) {
-        this.state.isValid ? child.props.onValidSubmit(model, this.resetModel, this.updateInputsWithError) : child.props.onInvalidSubmit(model, this.resetModel, this.updateInputsWithError);
-      }
+        event && event.preventDefault();
+
+        this.setFormPristine(false);
+        this.updateModel();
+        var model = this.mapModel();
+        
+        var isValidationListValid = true;
+        validationList = Array.isArray(validationList)  ? validationList : this.inputOrder; 
+        if (Array.isArray(validationList) && validationList.length > 0) {    
+            // Check if list is valid and set any components that are required and empty as invalid
+            isValidationListValid = this.isListOfComponentsValid(validationList);
+
+            // If validation list is not valid then find and focus on first invalid component 
+            if (!isValidationListValid) {
+                // Wait for setState of invalid components 
+                process.nextTick( function () {
+                    this.focusOnFirstInvalidDOMnode();
+                }.bind(this));
+            }
+        }
+        
+        if (child.props.onSubmit) {
+           child.props.onSubmit(model, this.resetModel, this.updateInputsWithError);
+        }
+        if (child.props.onValidSubmit) {
+           (this.state.isValid && isValidationListValid)  ? child.props.onValidSubmit(model, this.resetModel, this.updateInputsWithError) : function() {};
+        }
+        if (child.props.onInvalidSubmit) {
+           (!this.state.isValid || !isValidationListValid) ? child.props.onInvalidSubmit() : function() {};
+        }
     }.bind(this);
   },
   // Traverse the children and children of children to find
@@ -219,7 +287,7 @@ Formsy.Form = React.createClass({
       } else {
         if (child.props.formsy === 'submit') {
           return React.cloneElement(child, {
-            onClick: this.handleCustomSubmit(child)
+            onTouchTap: this.handleCustomSubmit(child, child.props.validateFields)
           }, child.props && child.props.children);   
         } else {
           return React.cloneElement(child, {}, this.traverseChildrenAndRegisterInputs(child.props && child.props.children));
@@ -293,15 +361,12 @@ Formsy.Form = React.createClass({
 
     var validationResults = this.runRules(value, currentValues, component._validations);
     var requiredResults = this.runRules(value, currentValues, component._requiredValidations);
-
-    // the component defines an explicit validate function
     if (typeof component.validate === "function") {
       validationResults.failed = component.validate() ? [] : ['failed'];
     }
 
     var isRequired = Object.keys(component._requiredValidations).length ? !!requiredResults.success.length : false;
     var isValid = !validationResults.failed.length && !(this.props.validationErrors && this.props.validationErrors[component.props.name]);
-
     return {
       isRequired: isRequired,
       isValid: isRequired ? false : isValid,
@@ -339,9 +404,11 @@ Formsy.Form = React.createClass({
       failed: [],
       success: []
     };
+    // Check if there are any validations
     if (Object.keys(validations).length) {
+      // Run through each validation defined on the component
       Object.keys(validations).forEach(function (validationMethod) {
-
+        // Check if validation method exists in formsy pre-defined validations
         if (validationRules[validationMethod] && typeof validations[validationMethod] === 'function') {
           throw new Error('Formsy does not allow you to override default validations: ' + validationMethod);
         }
@@ -349,7 +416,8 @@ Formsy.Form = React.createClass({
         if (!validationRules[validationMethod] && typeof validations[validationMethod] !== 'function') {
           throw new Error('Formsy does not have the validation rule: ' + validationMethod);
         }
-
+        // Run validation method on input value
+        
         if (typeof validations[validationMethod] === 'function') {
           var validation = validations[validationMethod](currentValues, value);
           if (typeof validation === 'string') {
@@ -361,11 +429,18 @@ Formsy.Form = React.createClass({
           return;
 
         } else if (typeof validations[validationMethod] !== 'function') {
+          // Run formsy pre-existing rules on currentValue
+          // If value is undefined then validation is true, if validation is a blank string, validation is true. and success is true
+          // value undefined or blank string = required success - 
+          // else, if value is not empty string, validation is true and a success
+
+          // URL validation: is true if url matches, result will be failed
           var validation = validationRules[validationMethod](currentValues, value, validations[validationMethod]);
           if (typeof validation === 'string') {
             results.errors.push(validation);
             results.failed.push(validationMethod);
           } else if (!validation) {
+            // push failed validation methods
             results.failed.push(validationMethod);
           } else {
             results.success.push(validationMethod);
@@ -445,6 +520,8 @@ Formsy.Form = React.createClass({
   attachToForm: function (component) {
     this.inputs[component.props.name] = component;
     this.model[component.props.name] = component.state._value;
+    // Based off the order the input components mount: may not be accurate
+    this.inputOrder.push(component.props.name);
     this.validate(component);
   },
 
