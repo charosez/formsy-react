@@ -1,6 +1,6 @@
 {
   "name": "formsy-react-patch",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "A patch of formsy-react addressing https://github.com/christianalfoni/formsy-react/issues/134",
   "repository": {
     "type": "git",
