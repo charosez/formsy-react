@@ -208,7 +208,9 @@ Formsy.Form = React.createClass({
       }
   },
   isListOfComponentsValid: function (listOfComponentNames) {
-      listOfComponentNames.every(function(name) {
+      // Tests whether or not components in the list are valid, 
+      // Also sets a component as invalid if it is required and empty
+      return listOfComponentNames.every(function(name) {
           var component = this.inputs[name];
           // Check if component is valid
           var validation = this.isValidValue(component);
