@@ -182,12 +182,19 @@ Formsy.Form = React.createClass({
     return this.runValidation(component, value).isValid;
   },
 
-  isRequiredAndEmpty: function (component) {
-      var value = component.getValue();
+  isRequiredAndEmpty: function (component, value) {
+      value = component.getValue();
       var isExisty = function(value) {
         return value !== null && value !== undefined;
       };
-      if (component.isRequired()) { 
+      if (component.isRequired()) {
+        // Check if array with empty value 
+        if (Array.isArray(value)) {
+            if (!isExisty(value[0]) || value[0].length <= 0) {
+                return true;
+            }
+        }
+        // Check if empty string
         if (!isExisty(value) || value.length <= 0) {
             return true;
         }
@@ -203,8 +210,22 @@ Formsy.Form = React.createClass({
           }
       }.bind(this));
       if (firstInvalidComponent) {
-          // Focus on first invalid component
+          // Focus on first invalid component (current only focuses on input fields)
           React.findDOMNode(firstInvalidComponent).childNodes[0].focus();
+
+          // TODO: find element with focus property, then focus
+          // If no elements of focus, scrollTo element instead, and flash yellow
+
+          // Save original css properties
+          // var originalColor = React.findDOMNode(firstInvalidComponent).style.backgroundColor;
+          // var originalOpacity = React.findDOMNode(firstInvalidComponent).style.opacity;
+          // Flash yellow 
+          // React.findDOMNode(firstInvalidComponent).style.backgroundColor = 'yellow';
+          // React.findDOMNode(firstInvalidComponent).style.opacity = '0.1';
+          // setTimeout(function() {
+          //   React.findDOMNode(firstInvalidComponent).style.backgroundColor = originalColor;
+          //   React.findDOMNode(firstInvalidComponent).style.opacity = originalOpacity;
+          // }, 1000)
       }
   },
   isListOfComponentsValid: function (listOfComponentNames) {
@@ -213,12 +234,19 @@ Formsy.Form = React.createClass({
       return listOfComponentNames.every(function(name) {
           var component = this.inputs[name];
           // Check if component is valid
-          var validation = this.isValidValue(component);
+          var validation = component.isValid();
           // Check if component is required and empty
           var isRequiredEmpty = this.isRequiredAndEmpty(component);
-          var isRequiredValid = !isRequiredEmpty;
+          var isRequiredValid = (!isRequiredEmpty && validation);
           // Set empty required field as invalid
-          if (isRequiredEmpty) {    
+          if (isRequiredEmpty) { 
+              if (Array.isArray(component.getValue())) {
+                   component.setState({
+                     _isRequired: false, 
+                     _isValid: false,
+                     _validationError: "This field is required"
+                  });
+              }
               component.setState({
                   _isRequired: false, 
                   _value: ' ', 
@@ -237,13 +265,12 @@ Formsy.Form = React.createClass({
         this.setFormPristine(false);
         this.updateModel();
         var model = this.mapModel();
-        
+
         var isValidationListValid = true;
         validationList = Array.isArray(validationList)  ? validationList : this.inputOrder; 
         if (Array.isArray(validationList) && validationList.length > 0) {    
             // Check if list is valid and set any components that are required and empty as invalid
             isValidationListValid = this.isListOfComponentsValid(validationList);
-
             // If validation list is not valid then find and focus on first invalid component 
             if (!isValidationListValid) {
                 // Wait for setState of invalid components 
