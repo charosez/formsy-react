@@ -257,7 +257,7 @@ Formsy.Form = React.createClass({
            child.props.onSubmit(model, this.resetModel, this.updateInputsWithError);
         }
         if (child.props.onValidSubmit) {
-           (this.state.isValid && isValidationListValid)  ? child.props.onValidSubmit(model, this.resetModel, this.updateInputsWithError) : function() {};
+           (isValidationListValid)  ? child.props.onValidSubmit(model, this.resetModel, this.updateInputsWithError) : function() {};
         }
         if (child.props.onInvalidSubmit) {
            (!this.state.isValid || !isValidationListValid) ? child.props.onInvalidSubmit() : function() {};
