@@ -260,7 +260,6 @@ Formsy.Form = React.createClass({
   },
   handleCustomSubmit: function(child, validationList) {
     return function() {
-        event && event.preventDefault();
 
         this.setFormPristine(false);
         this.updateModel();
