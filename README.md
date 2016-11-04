@@ -1,3 +1,7 @@
+This is a modified version of Christianal Foni's formsy-react.
+It allows you to have multiple submit buttons with different endpoints in a single form and apply different validation rules to them.
+A sample use case would be a form that allowed you to save or publish the input. In this use case, publishing might have stricter validation rules than simply just saving the input so you would want to have a different set of validations. 
+
 formsy-react  [![GitHub release](https://img.shields.io/github/release/christianalfoni/formsy-react.svg)](https://github.com/christianalfoni/formsy-react/releases) [![Build Status](https://travis-ci.org/christianalfoni/formsy-react.svg?branch=master)](https://travis-ci.org/christianalfoni/formsy-react)
 ============
 
